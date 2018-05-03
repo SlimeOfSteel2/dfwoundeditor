@@ -23,8 +23,8 @@ if unit == nil then
 end
 
 -- checks if unit is dead
-if unit.flags1[1] == nil then
-	qerror("No unit selected.")
+if unit.flags1["dead"] == true then
+	qerror("Unit is dead.")
 end
 
 ------
