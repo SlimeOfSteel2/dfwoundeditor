@@ -216,7 +216,7 @@ function woundsc:getStatusTable(rlid)
 		tstridx = tstridx + 1
 	end
 	
-	for i = 1,3,1 do
+	for i = 0,2,1 do
 		table.insert(tm,{text={{text=string.format("%-30s",tabstr[tstridx])},{gap=1,text=tostring(part.flags2[i])}}})
 		tstridx = tstridx + 1
 	end
@@ -262,7 +262,7 @@ function woundsc:changeStatusValue(selid)
 	if selid <= 32 then
 		if part.flags1[selid - 1] == true then part.flags1[selid - 1] = false else part.flags1[selid - 1] = true end
 	elseif selid > 32 and selid <= 35 then
-		if part.flags2[selid - 32] == true then part.flags2[selid - 32] = false else part.flags2[selid - 32] = true end
+		if part.flags2[selid - 33] == true then part.flags2[selid - 33] = false else part.flags2[selid - 33] = true end
 	elseif selid > 35 then
 		
 		--print(part[keylist[selid - 35]],keylist[selid - 35])
