@@ -36,7 +36,6 @@ function woundsc:init(args)
 
 
 local woundList = widgets.List{view_id="woundList",choices={},frame={t=1,l=1,b=1},on_submit=self:callback("updateWoundLayers")}
-local woundsubList = widgets.List{view_id="woundsubList",choices={},frame={t=1,l=1,b=1},on_submit=self:callback("updateWoundLayers")}
 local layerList = widgets.List{view_id="layerList",choices={},frame={t=1,l=1,b=1},on_submit=self:callback("updateWoundLayerStatus")}
 local layerstatusList = widgets.List{view_id="layerstatusList",choices={},frame={t=1,l=1,b=1},on_submit=self:callback("changeLayerStatusValue")}
 local partstatusList = widgets.List{view_id="partstatusList",choices={},frame={t=1,l=1,b=1},on_submit=self:callback("changePartStatusValue")}
