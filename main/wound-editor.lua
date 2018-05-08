@@ -48,7 +48,6 @@ local mp = widgets.Panel{
 		woundList,
 		widgets.Label{text={{key='CUSTOM_A',text=': Add wound '}},frame = {l=1,b=0}},
 		widgets.Label{text={{key='CUSTOM_R',text=': Remove wound '}},frame = {l=15,b=0}},
-		widgets.Label{text={{key='CUSTOM_O',text=': Organize wounds '}},frame = {l=32,b=0}},
 		
 	}}
 local layerp = widgets.Panel{subviews={
