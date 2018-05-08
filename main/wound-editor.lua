@@ -32,22 +32,31 @@ end
 woundsc = defclass(wound_screen,gui.FramedScreen)
 
 function woundsc:init(args)
+--self:organizeWounds()
+
+
 local woundList = widgets.List{view_id="woundList",choices={},frame={t=1,l=1,b=1},on_submit=self:callback("updateWoundLayers")}
+local woundsubList = widgets.List{view_id="woundsubList",choices={},frame={t=1,l=1,b=1},on_submit=self:callback("updateWoundLayers")}
 local layerList = widgets.List{view_id="layerList",choices={},frame={t=1,l=1,b=1},on_submit=self:callback("updateWoundLayerStatus")}
-local layerstatusList = widgets.List{view_id="layerstatusList",choices={},frame={t=1,l=1,b=1},on_submit=self:callback("changeStatusValue")}
+local layerstatusList = widgets.List{view_id="layerstatusList",choices={},frame={t=1,l=1,b=1},on_submit=self:callback("changeLayerStatusValue")}
+local partstatusList = widgets.List{view_id="partstatusList",choices={},frame={t=1,l=1,b=1},on_submit=self:callback("changePartStatusValue")}
+local selectedText = widgets.Label{view_id="selectedText",text={{text='Part selected: '}},frame={l=0,t=0}}
 --local 
 
 local mp = widgets.Panel{
 	subviews={
 		woundList,
 		widgets.Label{text={{key='CUSTOM_A',text=': Add wound '}},frame = {l=1,b=0}},
-		widgets.Label{text={{key='CUSTOM_R',text=': Remove wound '}},frame = {l=15,b=0}}
+		widgets.Label{text={{key='CUSTOM_R',text=': Remove wound '}},frame = {l=15,b=0}},
+		widgets.Label{text={{key='CUSTOM_O',text=': Organize wounds '}},frame = {l=32,b=0}},
 		
 	}}
 local layerp = widgets.Panel{subviews={
 	layerList,
 		widgets.Label{text={{key='CUSTOM_A',text=': Add layer '}},frame = {l=1,b=0}},
-		widgets.Label{text={{key='CUSTOM_R',text=': Remove layer '}},frame = {l=15,b=0}}
+		widgets.Label{text={{key='CUSTOM_R',text=': Remove layer '}},frame = {l=15,b=0}},
+		widgets.Label{text={{key='CUSTOM_S',text=': Edit part status '}},frame = {l=32,b=0}}
+		
 	}}
 
 local layerfp = widgets.Panel{subviews={
@@ -55,8 +64,13 @@ local layerfp = widgets.Panel{subviews={
 		widgets.Label{text={{key='SELECT',text=': Change value '}},frame = {l=1,b=0}},
 	
 	}}
-
-local pages = widgets.Pages{subviews={mp,layerp,layerfp},view_id="pages"}
+local partsp = widgets.Panel{subviews={
+	partstatusList,
+		widgets.Label{text={{key='SELECT',text=': Change value '}},frame = {l=1,b=0}},
+	
+	}}
+	
+local pages = widgets.Pages{subviews={mp,layerp,layerfp,partsp},view_id="pages"}
 self:addviews{
 	pages
 
@@ -72,7 +86,7 @@ function woundsc:onInput(keys)
 	end
 	
 	if keys.LEAVESCREEN then 
-		if self.subviews.pages:getSelected() == 3 then
+		if self.subviews.pages:getSelected() == 3 or self.subviews.pages:getSelected() == 4 then
 			self.subviews.pages:setSelected(2)
 		elseif self.subviews.pages:getSelected() == 2 then
 			self.subviews.pages:setSelected(1)
@@ -102,11 +116,11 @@ function woundsc:onInput(keys)
 			-- if they do, the wound(s) are not added to the selection list.
 			for p = 1,#unit.body.body_plan.body_parts,1 do
 				
-				if p ~= (twidt[tti]) then
+				--if p ~= (twidt[tti]) then
 					table.insert(parts,self:getBodyPartString(p - 1))
-				else
+				--else
 					tti = tti + 1
-				end
+				--end
 			end
 			
 			local confirm,idSel,selPrompt = guiScript.showListPrompt("Choose Part","Select a body part",nil,parts,nil,true)
@@ -126,7 +140,10 @@ function woundsc:onInput(keys)
 		end)
 	end
 	
-	
+	if keys.CUSTOM_S and self.subviews.pages:getSelected() == 2 then
+		self:updatePartStatus(selwpid)
+		self.subviews.pages:setSelected(4)
+	end
 	
 	self.super.onInput(self,keys)
 end
@@ -141,6 +158,8 @@ function woundsc:updateWounds()
 		table.insert(c,self:getBodyPartString(wt[i].parts[0].body_part_id))
 	end
 	
+	
+	
 	--table.sort(c)
 	self.subviews.woundList:setChoices(c)
 
@@ -151,13 +170,18 @@ function woundsc:updateWoundLayers(rid)
 	selwpid = rid - 1
 	local c = {}
 	local wt = unit.body.wounds[rid - 1].parts
+	local tpartid = wt[0].body_part_id
 	
 	-- I'm not sure how to explain it, but i'll try. Sometimes the first layer on a wound might have 
 	-- layer_idx greater than 0.
 	local idxoffset = unit.body.wounds[rid - 1].parts[0].layer_idx
 	
 	for i = 0,#wt - 1, 1 do
-		table.insert(c,self:getBodyPartLayerString(wt[0].body_part_id,(i + idxoffset)))
+		if wt[i].body_part_id == tpartid then
+			table.insert(c,self:getBodyPartLayerString(wt[i].body_part_id,(i + idxoffset)))
+		else
+			table.insert(c,self:getBodyPartString(wt[i].body_part_id) .. "; " .. self:getBodyPartLayerString(wt[i].body_part_id,(wt[i].layer_idx)))
+		end
 	end
 	self.subviews.layerList:setChoices(c)
 	--print(self.subviews.pages:getSelected())
@@ -165,11 +189,16 @@ function woundsc:updateWoundLayers(rid)
 end
 
 function woundsc:updateWoundLayerStatus(rlid)
-	local c = self:getStatusTable(rlid)
+	local c = self:getLayerStatusTable(rlid)
 	local part = unit.body.wounds[selwpid].parts[rlid - 1]
 	self.subviews.layerstatusList:setChoices(c)
 	self.subviews.pages:setSelected(3)
-	
+end
+
+function woundsc:updatePartStatus(rid)
+	local c = self:getPartStatusTable(rid)
+	self.subviews.partstatusList:setChoices(c)
+	self.subviews.pages:setSelected(4)
 end
 
 function woundsc:placeholder()
@@ -202,8 +231,8 @@ function woundsc:getBodyPartGlobalLayerId(rid,rlid)
 	return unit.body.body_plan.body_parts[rid].layers[rlid].layer_id
 end
 
--- makes a status table.
-function woundsc:getStatusTable(rlid)
+-- makes a layer status table.
+function woundsc:getLayerStatusTable(rlid)
 	-- this seemingly pointless table is actually used for the choice text.
 	-- TODO: Make better description types.
 	local tabstr={"cut","smashed","scar cut","scar smashed","bruised tendon","strained tendon","torn tendon","bruised ligament","sprained ligament","torn ligament","severed motor nerve","severed sensory nerve","edged damage","smashed apart","major artery torn","spilled guts","edged shake 1","scar edged shake 1","edged shake 2","broken","scar broken","gouged","blunt shake 1","scar blunt shake 1","blunt shake 2","joint bend 1","scar joint bend 1","joint bend 2","compound fracture","is diagnosed","artery","overlapping fracture","needs setting","entire surface","gelded","strain amount","bleeding level","pain level","nausea level","dizziness level","paralysis level","numbness level","swelling level","impairment level"}
@@ -234,6 +263,28 @@ function woundsc:getStatusTable(rlid)
 	
 end
 
+function woundsc:getPartStatusTable(rid)
+	--local tabstr={"severed part","bleeding level","pain level","nausea level","dizziness level","paralysis level","numbness level","fever"}
+	local tabstr={"on fire","is missing","organ loss","organ damage","muscle loss","muscle damage","bone loss","bone damage","skin damage","motor nerve severed","sensory nerve severed","guts spilled","has splint","has bandage","has plaster cast","grime level","severed or jammed","under shell","is shell"}
+	local tm = {}
+	local part = unit.body.components.body_part_status[unit.body.wounds[rid].parts[0].body_part_id]
+	local tstridx = 1
+	
+	--printall(part)
+	
+	for i = 0,15,1 do
+		table.insert(tm,{text={{text=string.format("%-30s",tabstr[tstridx])},{gap=1,text=tostring(part[i])}}})
+		tstridx = tstridx + 1
+	end
+	for i = 18,20,1 do
+		table.insert(tm,{text={{text=string.format("%-30s",tabstr[tstridx])},{gap=1,text=tostring(part[i])}}})
+		tstridx = tstridx + 1
+	end
+	
+	return tm
+	
+end
+
 function woundsc:addWound(rid,rlid)
 	unit.body.wounds:insert("#",{new=true})
 	
@@ -256,7 +307,7 @@ function woundsc:removeWound(rid)
 	self:updateWounds()
 end
 
-function woundsc:changeStatusValue(selid)
+function woundsc:changeLayerStatusValue(selid)
 	local part = unit.body.wounds[selwpid].parts[self.subviews.layerList.selected - 1]
 	local keylist = {"strain","bleeding","pain","nausea","dizziness","paralysis","numbness","swelling","impaired"}
 	if selid <= 32 then
@@ -279,7 +330,8 @@ function woundsc:changeStatusValue(selid)
 	self:updateWoundLayerStatus(self.subviews.layerList.selected)
 end
 
-
---print(getBodyPartString(0))
+function woundsc:changePartStatusValue(selid)
+	
+end
 
 woundsc{}:show()
