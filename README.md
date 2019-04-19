@@ -4,13 +4,14 @@ A Dwarf Fortress Wound Editor.
 Requires DFHack.
 
 
-VERSION 1.1 Alpha
+VERSION 1.2
 
 # Changelog
+#### Version 1.2
+Fixed a critical bug that would not let it load
 
 #### Version 1.1
 Added subpart support (kind of)
-
 
 #### Version 1.0
 
