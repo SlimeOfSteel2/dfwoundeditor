@@ -23,7 +23,9 @@ if unit == nil then
 end
 
 -- checks if unit is dead
-if unit.flags1["dead"] == true then
+-- in some update, the flag was changed from "dead" to "inactive"
+-- not sure why they did that but okay
+if unit.flags1["inactive"] == true then
 	qerror("Unit is dead.")
 end
 
